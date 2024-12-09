@@ -1,3 +1,4 @@
+import { ITimeSeriesQuery } from "../interfaces";
 import { delay } from "../utils";
 import { axiosClient } from "./axios.service";
 
@@ -17,5 +18,9 @@ export const ApiService = {
         headquarterId,
       },
     });
+  },
+  getTimeSeries: async (query: ITimeSeriesQuery) => {
+    await delay(3000);
+    return axiosClient.get("/timeSeries", { params: query });
   },
 };
