@@ -23,4 +23,8 @@ export const ApiService = {
     await delay(3000);
     return axiosClient.get("/timeSeries", { params: query });
   },
+  getTimeSeriesById: async (id?: string) => {
+    await delay(3000);
+    return axiosClient.get(`/timeSeries/${id}`);
+  },
 };

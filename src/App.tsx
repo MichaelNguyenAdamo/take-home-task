@@ -1,13 +1,24 @@
+import { Line, LineConfig } from "@ant-design/charts";
 import { DownloadOutlined } from "@ant-design/icons";
-import { Col, Dropdown, MenuProps, Row, Typography } from "antd";
-import { useState } from "react";
-import { AppDateRangePicker, AppSelect } from "./components";
+import { Col, Dropdown, MenuProps, Row, Spin, Typography } from "antd";
+import dayjs, { Dayjs } from "dayjs";
+import { unparse } from "papaparse";
+import { useMemo, useState } from "react";
+import { toast, TypeOptions } from "react-toastify";
+import {
+  AppDateRangePicker,
+  AppSelect,
+  DownloadPreviewModal,
+} from "./components";
 import {
   useGetElectricityMetersQuery,
   useGetHeadquartersQuery,
   useGetRoomsQuery,
+  useGetTimeSeriesByIdQuery,
   useGetTimeSeriesQuery,
 } from "./hooks";
+import { ITimestampData } from "./interfaces";
+import { delay } from "./utils";
 
 const items: MenuProps["items"] = [
   {
@@ -35,6 +46,9 @@ function App() {
     string | undefined
   >();
   const [timeSeriesId, setTimeSeriesId] = useState<string | undefined>();
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
+  const [isShowPreviewModal, setIsShowPreviewModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const { headquarters, isFetching } = useGetHeadquartersQuery();
 
@@ -55,7 +69,161 @@ function App() {
       },
     });
 
-  const handleMenuClick: MenuProps["onClick"] = () => {};
+  const { timeSeriesDetail, isFetching: isTimeSeriesDetailFetching } =
+    useGetTimeSeriesByIdQuery({
+      id: timeSeriesId,
+      startDate: dateRange?.[0],
+      endDate: dateRange?.[1],
+    });
+
+  const chartConfig: LineConfig = useMemo(
+    () => ({
+      data: {
+        value: timeSeriesDetail?.data || [],
+        transform: [
+          {
+            type: "fold",
+            fields: [
+              ...((roomId && ["temperature", "humidity"]) || []),
+              ...((electricityMeterId && ["energyConsumption", "cost"]) || []),
+            ],
+            key: "type",
+            value: "value",
+          },
+        ],
+      },
+      xField: (item: ITimestampData) => {
+        return dayjs(item.timestamp).format("YYYY-MM-DD");
+      },
+      yField: "value",
+      colorField: "type",
+      axis: {
+        x: { labelAutoHide: "greedy" },
+      },
+      smooth: true,
+    }),
+    [timeSeriesDetail, roomId, electricityMeterId]
+  );
+
+  const handleMenuClick: MenuProps["onClick"] = (e) => {
+    switch (e.key) {
+      case "csv":
+        return onDownloadCsvFile();
+      case "json":
+        return onDownloadJsonFile();
+      case "json-fail":
+        return onDownloadJsonFile(false);
+
+      default:
+        return onDownloadCsvFile(false);
+    }
+  };
+
+  const onDownloadCsvFile = async (success = true) => {
+    if (!timeSeriesDetail) return;
+
+    try {
+      setIsDownloading(true);
+
+      if (!success) {
+        await delay(3000);
+        throw new Error("Download CSV file failed");
+      }
+
+      let csvContent = "";
+
+      const timeseriesCSV = unparse(timeSeriesDetail.data, { header: true });
+      csvContent += `${timeSeriesDetail?.name}\n${timeseriesCSV}`;
+
+      await delay(3000);
+
+      await onDownloadFile(
+        csvContent,
+        "text/csv;charset=utf-8;",
+        `${timeSeriesDetail.name}.csv`
+      );
+
+      onShowNotification(
+        "success",
+        "The CSV file has been downloaded successfully"
+      );
+
+      onShowPreviewModal();
+    } catch (error) {
+      onShowNotification("error", (error as Error).message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+  const onDownloadJsonFile = async (success = true) => {
+    if (!timeSeriesDetail) return;
+
+    try {
+      setIsDownloading(true);
+
+      if (!success) {
+        await delay(3000);
+        throw new Error("Download JSON file failed");
+      }
+
+      const jsonContent = JSON.stringify(
+        {
+          ...timeSeriesDetail.data,
+        },
+        null,
+        2
+      );
+
+      await delay(3000);
+
+      await onDownloadFile(
+        jsonContent,
+        "application/json",
+        `${timeSeriesDetail.name}.json`
+      );
+
+      onShowNotification(
+        "success",
+        "The JSON file has been downloaded successfully"
+      );
+
+      onShowPreviewModal();
+    } catch (error) {
+      onShowNotification("error", (error as Error).message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const onDownloadFile = (content: string, type: string, fileName: string) => {
+    return new Promise((resolve) => {
+      const blob = new Blob([content], { type });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      resolve({ success: true });
+    });
+  };
+
+  const onResetTimeSeries = () => {
+    setTimeSeriesId(undefined);
+  };
+
+  const onShowPreviewModal = () => {
+    setIsShowPreviewModal(true);
+  };
+  const onClosePreviewModal = () => {
+    setIsShowPreviewModal(false);
+  };
+
+  const onShowNotification = (type: TypeOptions, message: string) => {
+    toast(message, {
+      type,
+    });
+  };
 
   return (
     <div className="flex flex-col gap-6 py-6 px-8">
@@ -88,6 +256,10 @@ function App() {
               value={roomId}
               isFetching={isRoomsFetching}
               placeholder="Select room"
+              allowClear
+              onClear={onResetTimeSeries}
+              showSearch
+              optionFilterProp="label"
             />
           </Col>
         )}
@@ -103,6 +275,10 @@ function App() {
               value={electricityMeterId}
               isFetching={isMeterFetching}
               placeholder="Select electricity meter"
+              allowClear
+              onClear={onResetTimeSeries}
+              showSearch
+              optionFilterProp="label"
             />
           </Col>
         )}
@@ -117,35 +293,68 @@ function App() {
             value={timeSeriesId}
             isFetching={isTimeSeriesFetching}
             placeholder="Select Time Series"
+            showSearch
+            optionFilterProp="label"
           />
         </Col>
         {timeSeriesId && (
           <>
             <Col span={6}>
-              <AppDateRangePicker label="Select Date Range" />
+              <AppDateRangePicker
+                label="Select Date Range"
+                value={dateRange}
+                onChange={(date) => {
+                  setDateRange(date as [Dayjs, Dayjs] | null);
+                }}
+              />
             </Col>
           </>
         )}
       </Row>
-      <Row>
-        <Col span={24}>
-          <div className="flex justify-between items-center">
-            <Typography.Title level={4}>Time series 1</Typography.Title>
-            <Dropdown.Button
-              menu={{
-                items,
-                onClick: handleMenuClick,
-              }}
-              type="primary"
-              trigger={["click"]}
-              icon={<DownloadOutlined />}
-              className="flex-none w-auto"
-            >
-              Download
-            </Dropdown.Button>
-          </div>
-        </Col>
-      </Row>
+      {timeSeriesId && (
+        <Row>
+          <Col span={24}>
+            <div className="flex justify-between items-center">
+              <Typography.Title level={4}>
+                {timeSeriesDetail?.name}
+              </Typography.Title>
+              <Dropdown.Button
+                menu={{
+                  items,
+                  onClick: handleMenuClick,
+                }}
+                type="primary"
+                trigger={["click"]}
+                icon={<DownloadOutlined />}
+                className="flex-none w-auto"
+                loading={isDownloading}
+              >
+                Download
+              </Dropdown.Button>
+            </div>
+
+            <Line
+              {...chartConfig}
+              loading={isTimeSeriesDetailFetching}
+              loadingTemplate={
+                <div className="flex justify-center items-center">
+                  <Spin />
+                </div>
+              }
+            />
+          </Col>
+        </Row>
+      )}
+      <DownloadPreviewModal
+        open={isShowPreviewModal}
+        centered
+        title={timeSeriesDetail?.name}
+        onCancel={onClosePreviewModal}
+        footer={null}
+        width={600}
+        timeSeriesDetail={timeSeriesDetail}
+        type={roomId ? "room" : "electricityMeter"}
+      />
     </div>
   );
 }
