@@ -10,8 +10,8 @@ type Props = {
 
 const useGetRoomsQuery = ({ headquarterId }: Props) => {
   const { data, isFetching } = useQuery<AxiosResponse<IRoom[]>>({
-    queryKey: ["QK_GET_ROOMS"],
-    queryFn: () => ApiService.getRooms(),
+    queryKey: ["QK_GET_ROOMS", headquarterId],
+    queryFn: () => ApiService.getRooms(headquarterId),
     enabled: !!headquarterId,
   });
 

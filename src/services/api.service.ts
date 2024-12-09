@@ -6,8 +6,16 @@ export const ApiService = {
     await delay(3000);
     return axiosClient.get("/headquarters");
   },
-  getRooms: async () => {
+  getRooms: async (headquarterId?: string) => {
     await delay(3000);
-    return axiosClient.get("/rooms");
+    return axiosClient.get("/rooms", { params: { headquarterId } });
+  },
+  getElectricityMeters: async (headquarterId?: string) => {
+    await delay(3000);
+    return axiosClient.get("/electricityMeters", {
+      params: {
+        headquarterId,
+      },
+    });
   },
 };
