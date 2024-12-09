@@ -6,6 +6,7 @@ import {
   useGetElectricityMetersQuery,
   useGetHeadquartersQuery,
   useGetRoomsQuery,
+  useGetTimeSeriesQuery,
 } from "./hooks";
 
 const items: MenuProps["items"] = [
@@ -33,14 +34,25 @@ function App() {
   const [electricityMeterId, setElectricityMeterId] = useState<
     string | undefined
   >();
+  const [timeSeriesId, setTimeSeriesId] = useState<string | undefined>();
 
   const { headquarters, isFetching } = useGetHeadquartersQuery();
+
   const { rooms, isFetching: isRoomsFetching } = useGetRoomsQuery({
     headquarterId,
   });
+
   const { electricityMeters, isFetching: isMeterFetching } =
     useGetElectricityMetersQuery({
       headquarterId,
+    });
+
+  const { timeSeries, isFetching: isTimeSeriesFetching } =
+    useGetTimeSeriesQuery({
+      query: {
+        ...(roomId && { roomId }),
+        ...(electricityMeterId && { electricityMeterId }),
+      },
     });
 
   const handleMenuClick: MenuProps["onClick"] = () => {};
@@ -64,42 +76,56 @@ function App() {
             optionFilterProp="label"
           />
         </Col>
-        <Col span={6}>
-          <AppSelect
-            label="Select Room"
-            options={rooms.map((room) => ({
-              label: room.name,
-              value: room.id,
-            }))}
-            onChange={(value) => setRoomId(value)}
-            value={roomId}
-            isFetching={isRoomsFetching}
-            placeholder="Select room"
-          />
-        </Col>
-        <Col span={6}>
-          <AppSelect
-            label="Select Electricity Meter"
-            options={electricityMeters.map((meter) => ({
-              label: meter.name,
-              value: meter.id,
-            }))}
-            onChange={(value) => setElectricityMeterId(value)}
-            value={electricityMeterId}
-            isFetching={isMeterFetching}
-            placeholder="Select electricity meter"
-          />
-        </Col>
+        {!electricityMeterId && (
+          <Col span={6}>
+            <AppSelect
+              label="Select Room"
+              options={rooms.map((room) => ({
+                label: room.name,
+                value: room.id,
+              }))}
+              onChange={(value) => setRoomId(value)}
+              value={roomId}
+              isFetching={isRoomsFetching}
+              placeholder="Select room"
+            />
+          </Col>
+        )}
+        {!roomId && (
+          <Col span={6}>
+            <AppSelect
+              label="Select Electricity Meter"
+              options={electricityMeters.map((meter) => ({
+                label: meter.name,
+                value: meter.id,
+              }))}
+              onChange={(value) => setElectricityMeterId(value)}
+              value={electricityMeterId}
+              isFetching={isMeterFetching}
+              placeholder="Select electricity meter"
+            />
+          </Col>
+        )}
         <Col span={6}>
           <AppSelect
             label="Select Time Series"
-            options={[]}
+            options={timeSeries.map((e) => ({
+              label: e.name,
+              value: e.id,
+            }))}
+            onChange={(value) => setTimeSeriesId(value)}
+            value={timeSeriesId}
+            isFetching={isTimeSeriesFetching}
             placeholder="Select Time Series"
           />
         </Col>
-        <Col span={6}>
-          <AppDateRangePicker label="Select Date Range" />
-        </Col>
+        {timeSeriesId && (
+          <>
+            <Col span={6}>
+              <AppDateRangePicker label="Select Date Range" />
+            </Col>
+          </>
+        )}
       </Row>
       <Row>
         <Col span={24}>
