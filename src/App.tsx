@@ -1,6 +1,8 @@
 import { DownloadOutlined } from "@ant-design/icons";
 import { Col, Dropdown, MenuProps, Row, Typography } from "antd";
+import { useState } from "react";
 import { AppDateRangePicker, AppSelect } from "./components";
+import { useGetHeadquartersQuery } from "./hooks";
 
 const items: MenuProps["items"] = [
   {
@@ -22,6 +24,10 @@ const items: MenuProps["items"] = [
 ];
 
 function App() {
+  const [headquarterId, setHeadquarterId] = useState<string | undefined>();
+
+  const { headquarters, isFetching } = useGetHeadquartersQuery();
+
   const handleMenuClick: MenuProps["onClick"] = () => {};
 
   return (
@@ -31,8 +37,16 @@ function App() {
         <Col span={6}>
           <AppSelect
             label="Select Headquarter"
-            options={[]}
+            options={headquarters.map((hq) => ({
+              label: hq.name,
+              value: hq.id,
+            }))}
+            isFetching={isFetching}
+            onChange={(value) => setHeadquarterId(value)}
+            value={headquarterId}
             placeholder="Select headquarter"
+            showSearch
+            optionFilterProp="label"
           />
         </Col>
         <Col span={6}>

@@ -1,4 +1,4 @@
-import { Select, SelectProps, Spin } from "antd";
+import { Select, SelectProps } from "antd";
 
 interface Props extends SelectProps {
   label: string;
@@ -15,21 +15,13 @@ const AppSelect = ({
   return (
     <div className="flex flex-col gap-1">
       <label>{label}</label>
-      <Select className="w-full" onPopupScroll={onPopupScroll} {...rest}>
-        {options?.map((option) => (
-          <Select.Option key={option.value} value={option.value}>
-            {option.label}
-          </Select.Option>
-        ))}
-
-        {isFetching && (
-          <Select.Option disabled={true} value="loading">
-            <div className="flex justify-center items-center">
-              <Spin />
-            </div>
-          </Select.Option>
-        )}
-      </Select>
+      <Select
+        className="w-full"
+        onPopupScroll={onPopupScroll}
+        options={options}
+        loading={isFetching}
+        {...rest}
+      />
     </div>
   );
 };
