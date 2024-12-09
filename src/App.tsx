@@ -1,5 +1,86 @@
+import { DownloadOutlined } from "@ant-design/icons";
+import { Col, Dropdown, MenuProps, Row, Typography } from "antd";
+import { AppDateRangePicker, AppSelect } from "./components";
+
+const items: MenuProps["items"] = [
+  {
+    key: "csv",
+    label: "Download CSV file",
+  },
+  {
+    key: "json",
+    label: "Download JSON file",
+  },
+  {
+    key: "csv-fail",
+    label: "Download CSV file (fail)",
+  },
+  {
+    key: "json-fail",
+    label: "Download JSON file (fail)",
+  },
+];
+
 function App() {
-  return <div className="text-red-500">Take Home Task</div>;
+  const handleMenuClick: MenuProps["onClick"] = () => {};
+
+  return (
+    <div className="flex flex-col gap-6 py-6 px-8">
+      <Typography.Title level={2}>Time Series Download</Typography.Title>
+      <Row gutter={[24, 16]}>
+        <Col span={6}>
+          <AppSelect
+            label="Select Headquarter"
+            options={[]}
+            placeholder="Select headquarter"
+          />
+        </Col>
+        <Col span={6}>
+          <AppSelect
+            label="Select Room"
+            options={[]}
+            placeholder="Select room"
+          />
+        </Col>
+        <Col span={6}>
+          <AppSelect
+            label="Select Electricity Meter"
+            options={[]}
+            placeholder="Select electricity meter"
+          />
+        </Col>
+        <Col span={6}>
+          <AppSelect
+            label="Select Time Series"
+            options={[]}
+            placeholder="Select Time Series"
+          />
+        </Col>
+        <Col span={6}>
+          <AppDateRangePicker label="Select Date Range" />
+        </Col>
+      </Row>
+      <Row>
+        <Col span={24}>
+          <div className="flex justify-between items-center">
+            <Typography.Title level={4}>Time series 1</Typography.Title>
+            <Dropdown.Button
+              menu={{
+                items,
+                onClick: handleMenuClick,
+              }}
+              type="primary"
+              trigger={["click"]}
+              icon={<DownloadOutlined />}
+              className="flex-none w-auto"
+            >
+              Download
+            </Dropdown.Button>
+          </div>
+        </Col>
+      </Row>
+    </div>
+  );
 }
 
 export default App;
