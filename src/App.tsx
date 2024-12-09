@@ -3,6 +3,7 @@ import { Col, Dropdown, MenuProps, Row, Typography } from "antd";
 import { useState } from "react";
 import { AppDateRangePicker, AppSelect } from "./components";
 import { useGetHeadquartersQuery } from "./hooks";
+import { useGetRoomsQuery } from "./hooks/useGetRooms.query";
 
 const items: MenuProps["items"] = [
   {
@@ -25,8 +26,12 @@ const items: MenuProps["items"] = [
 
 function App() {
   const [headquarterId, setHeadquarterId] = useState<string | undefined>();
+  const [roomId, setRoomId] = useState<string | undefined>();
 
   const { headquarters, isFetching } = useGetHeadquartersQuery();
+  const { rooms, isFetching: isRoomsFetching } = useGetRoomsQuery({
+    headquarterId: headquarterId,
+  });
 
   const handleMenuClick: MenuProps["onClick"] = () => {};
 
@@ -52,7 +57,13 @@ function App() {
         <Col span={6}>
           <AppSelect
             label="Select Room"
-            options={[]}
+            options={rooms.map((room) => ({
+              label: room.name,
+              value: room.id,
+            }))}
+            onChange={(value) => setRoomId(value)}
+            value={roomId}
+            isFetching={isRoomsFetching}
             placeholder="Select room"
           />
         </Col>
