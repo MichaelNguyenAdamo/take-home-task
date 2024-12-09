@@ -226,10 +226,13 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col gap-6 py-6 px-8">
+    <div className="flex flex-col gap-6 py-6 px-8 max-w-7xl mx-auto">
       <Typography.Title level={2}>Time Series Download</Typography.Title>
-      <Row gutter={[24, 16]}>
-        <Col span={6}>
+      <Row
+        gutter={[24, 16]}
+        className="bg-white p-6 !mx-0 rounded-md shadow-md"
+      >
+        <Col span={24} sm={12} lg={6}>
           <AppSelect
             label="Select Headquarter"
             options={headquarters.map((hq) => ({
@@ -245,7 +248,7 @@ function App() {
           />
         </Col>
         {!electricityMeterId && (
-          <Col span={6}>
+          <Col span={24} sm={12} lg={6}>
             <AppSelect
               label="Select Room"
               options={rooms.map((room) => ({
@@ -264,7 +267,7 @@ function App() {
           </Col>
         )}
         {!roomId && (
-          <Col span={6}>
+          <Col span={12} md={6}>
             <AppSelect
               label="Select Electricity Meter"
               options={electricityMeters.map((meter) => ({
@@ -282,7 +285,7 @@ function App() {
             />
           </Col>
         )}
-        <Col span={6}>
+        <Col span={24} sm={12} lg={6}>
           <AppSelect
             label="Select Time Series"
             options={timeSeries.map((e) => ({
@@ -297,9 +300,9 @@ function App() {
             optionFilterProp="label"
           />
         </Col>
-        {timeSeriesId && (
+        {(roomId || electricityMeterId) && (
           <>
-            <Col span={6}>
+            <Col span={24} sm={12} lg={6}>
               <AppDateRangePicker
                 label="Select Date Range"
                 value={dateRange}
@@ -312,7 +315,7 @@ function App() {
         )}
       </Row>
       {timeSeriesId && (
-        <Row>
+        <Row className="bg-white p-6 rounded-md shadow-md">
           <Col span={24}>
             <div className="flex justify-between items-center">
               <Typography.Title level={4}>
